@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: mynginx:latest
+    container_name: mynginx
     ports:
       - "8080:80"
     volumes:
