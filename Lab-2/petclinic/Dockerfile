@@ -1,6 +1,14 @@
 FROM eclipse-temurin:17-jdk-alpine AS builder
+
 WORKDIR /app
+
 COPY . .
+
+RUN mkdir -p /root/.m2
+VOLUME /root/.m2
+
+RUN ./mvnw dependency:go-offline -B
+
 RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
