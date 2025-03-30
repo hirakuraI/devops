@@ -1,19 +1,12 @@
-FROM alpine:3.19 AS builder
+ARG IMAGE_BUILD=petclinic-build
+ARG VERSION=latest
 
-RUN apk add --no-cache openjdk17 maven
-
-WORKDIR /app
-
-COPY . .
-
-RUN mkdir -p /root/.m2
-VOLUME /root/.m2
-
-RUN ./mvnw dependency:go-offline -B
-
-RUN ./mvnw clean package -DskipTests
+FROM ${IMAGE_BUILD}:${VERSION} as build-stage
 
 FROM alpine:3.19
+
+ARG VERSION=latest
+LABEL version=${VERSION}
 
 RUN apk add --no-cache openjdk17-jre
 
@@ -21,7 +14,7 @@ WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /app/target/spring-petclinic-*.jar app.jar
+COPY --from=build-stage /app/target/spring-petclinic-*.jar app.jar
 RUN chown appuser:appgroup app.jar
 
 VOLUME /home/appuser/.m2
