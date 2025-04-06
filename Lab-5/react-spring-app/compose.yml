@@ -1,0 +1,83 @@
+services:
+  db:
+    image: mysql:8.3
+    container_name: mysql
+    restart: on-failure
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 3
+      timeout: 5s
+
+  backend:
+    build:
+      context: ./spring-backend
+      dockerfile: Dockerfile
+    container_name: backend
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_HOST: db
+    networks:
+      - internal
+
+  frontend:
+    image: frontend
+    build:
+      context: ./react-frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL}
+    container_name: frontend
+    volumes:
+      - ./react-frontend/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - internal
+
+  nginx-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "3001:3000"
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    restart: on-failure
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - internal
+    user: "my_nginx:my_nginx"
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  db:
+
+
