@@ -13,7 +13,7 @@ RUN npm install --no-cache
 COPY ./public ./public
 COPY ./src ./src
 
-ENV REACT_APP_API_BASE_URL=http://localhost:8081
+ENV REACT_APP_API_BASE_URL=http://localhost:8080
 
 RUN npm run build
 
